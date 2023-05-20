@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <title>Vue3</title>
+    
+</head>
+<body>
+        <div id="app">
+            <div class="container">
+                <div>
+                    <input placeholder="請輸入查詢員編" v-model="inputValue" :disabled="isShowEdit || isShowInsert">&nbsp;
+                    <input type="button" class="btn btn-primary btn-sm" @click="handleInsert(users.length)" value="新增員工" :disabled="isShowInsert || inputValue != ''">
+                </div><br>
+               
+                <table class="table table-hover table-light" style="text-align: center;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>電腦編號</th>
+                            <th>姓名</th>
+                            <th>分機</th>
+                            <th>功能</th>
+                        </tr>
+                    </thead>
+                    <tbody v-for="(user,index) in searchEmpno">
+                        <tr v-if="user.empNo.trim().length==0">
+                            <th scope="row">{{index+1}}</th>
+                            <td><input type="text" class="form-control" v-model="arr[index].empNo"></td>
+                            <td><input type="text" class="form-control" v-model="arr[index].name"></td>
+                            <td><input type="text" class="form-control" v-model="arr[index].tel"></td>
+                            <td>
+                                <button class="btn btn-warning" @click="saveInsertData(index)">新增</button>&nbsp;
+                                <button class="btn btn-danger" @click="handleCancel">取消</button>   
+                            </td>  
+                        </tr>
+                        <tr v-else>
+                            <th scope="row">{{index+1}}</th>
+                            <td>{{user.empNo}}</td>
+                            <td>{{user.name}}</td>
+                            <td>{{user.tel}}</td>
+                            <td>
+                                <button class="btn btn-warning" @click="handleEdit(index)" :disabled="isShowEdit || isShowInsert">編輯</button> &nbsp;
+                                <button class="btn btn-danger"  data-bs-toggle="modal" data-bs-target="#exampleModal" :disabled="isShowEdit || isShowInsert">刪除</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div v-show="isShowEdit">
+                    <Employee-Edit :arr="arr" @do-save="saveData(arr[0].id)" @do-close-edit="closeEdit"></Employee-Edit>
+                </div>
+  
+                <!-- Modal -->
+                <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">警告</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                             確定要刪除？
+                        </div>
+                        <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" @click="handleDelete(index)" data-bs-dismiss="modal">確認</button>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script type="module">
+            import {createApp, ref, reactive, computed} from './vue.js'
+            import EmployeeEdit from './EmployeeEdit.js'
+            
+
+            const app = {
+                components:{
+                    EmployeeEdit,
+                },
+                setup() {             
+                const users = reactive([
+                    {
+                        empNo:'FB6693',
+                        name:'猴哥哥',
+                        tel:'1661',
+                    },
+                    {
+                        empNo:'FG1945',
+                        name:'陳小春',
+                        tel:'1662',
+                    },
+                    {
+                        empNo:'FG1895',
+                        name:'伍佰',
+                        tel:'1663',
+                    }                         
+                ])
+
+                const inputValue = ref('')
+                
+                const searchEmpno = computed(()=>{
+                    return users.filter((m)=>{
+                        return(
+                            m.empNo.toLowerCase().indexOf(inputValue.value.toLowerCase()) != -1
+                        )
+                    })
+                })
+
+                const handleDelete = (id) => {
+                    users.splice(id,1)                 
+                }
+
+                //store target item
+                const arr = reactive([{
+                    empNo:'',
+                    name:'',
+                    tel:'',
+                }])
+
+                //edit zone state
+                const isShowEdit = ref(false)
+
+                const handleEdit = (id) => { 
+                    isShowEdit.value = true
+                    isShowInsert.value = false
+                    arr.length = 0 
+                    const editedUser = 
+                    {
+                        id,
+                        empNo:users[id].empNo,
+                        name:users[id].name,
+                        tel:users[id].tel
+                    }      
+                    arr.push(editedUser)
+                }
+
+                const closeEdit = () => {
+                    isShowEdit.value = false
+                }
+
+                //save edit data
+                const saveData = (id) => {
+                        delete arr[0].id
+                        users[id] = arr[0]
+                        isShowEdit.value = false
+                }   
+
+                //insert data
+                const isShowInsert = ref(false)
+
+                const handleInsert = (item) => {
+                    isShowEdit.value = false
+                    
+                    arr[item] = {
+                        empNo : '',
+                        name: '',
+                        tel: ''
+                    }
+                        
+                    const data = {
+                        empNo : '',
+                        name: '',
+                        tel: ''
+                    }   
+                         
+                    users.push(data)
+                    isShowInsert.value = true
+                    console.log(arr)
+                }
+
+                const handleCancel = () => {
+                    users.pop()
+                    isShowInsert.value = false
+                }
+
+                //save insert data
+                const saveInsertData = (id) => {
+                    console.log(id)
+                    if(arr[id].empNo.replaceAll(' ','')<=0){
+                        alert('請輸入電腦編號')
+                        return
+                    }
+                    isShowInsert.value = false
+                    delete arr[0].id
+                    users[id] = arr[id]
+            }   
+
+                return {
+                    users,
+                    inputValue,
+                    searchEmpno,
+                    handleDelete,
+                    handleEdit,
+                    handleInsert,
+                    arr,
+                    isShowEdit,
+                    isShowInsert,
+                    saveData,
+                    handleCancel ,
+                    saveInsertData,
+                    closeEdit
+                }
+                
+            },
+        }
+        createApp(app).mount('#app')
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+<style>
+    td input {
+        width: 100%;
+    }
+</style>
+         
+</body>
+</html>
